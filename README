@@ -1,0 +1,17 @@
+# 3mail
+## The decentralised mailing service.
+
+### Features:
+  - Connect to a *single* mailbox from a private key on a solidity capable network.
+  - Send encrypted or unencrpyted messages to another mailbox.
+  - Clean and housekeep mailbox.
+
+Create an inbox using the CLI,
+```py
+python deploy.py \
+  --rpc http://127.0.0.1:8545 \
+  --key 0xYOUR_PRIVATE_KEY_HERE \
+  --contract contracts/Greeter.sol \
+  --args "Hello Ganache!"
+
+```
