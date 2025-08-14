@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 contract Mailbox
 {
     address public immutable owner;
-    bytes public key;
     Mail[] private inbox;
 
     struct Mail
@@ -15,10 +14,9 @@ contract Mailbox
         bytes signature;
     }
 
-    constructor(bytes memory _key)
+    constructor()
     {
         owner = msg.sender;
-        key = _key;
     }
 
     function sendMessage(bytes calldata message, bytes calldata signature) external
@@ -51,11 +49,6 @@ contract Mailbox
     {
         require(index < inbox.length, "No mail at index");
         delete inbox[index];
-    }
-
-    function updateKey(bytes calldata _key) external onlyOwner
-    {
-        key = _key;
     }
 
     modifier onlyOwner()

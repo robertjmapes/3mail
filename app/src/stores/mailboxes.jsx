@@ -3,7 +3,7 @@ import { ethers } from "ethers";
 
 import {  useWallet } from './wallet.jsx'
 
-import MailboxArtifact from '../data/Mailbox.json'
+import MailboxArtifact from '../Mailbox.json'
 
 const MailboxContext = createContext();
 
@@ -11,7 +11,6 @@ export function MailboxProvider({ children }) {
     const { signer, provider } = useWallet();  
 
     const [mailboxes, setMailboxes] = useState([
-        { name: "General", owner: "0xabc" }
     ]);
 
     const newMailbox = async () => {
@@ -32,9 +31,10 @@ export function MailboxProvider({ children }) {
         );
 
         console.log("Deploying contract...");
+        console.log(contract);
         await contract.deployed(); // wait for confirmation
         console.log("Contract deployed at:", contract.address);
-
+        console.log(contract);
         return contract;
     };
 

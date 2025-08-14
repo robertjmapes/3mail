@@ -1,9 +1,9 @@
 import { createRoot } from "react-dom/client";
-import "./assets/index.css";
+import "./index.css";
 
 import Header from "./components/Header.jsx";
 import Footer from "./components/Footer.jsx";
-import Dashboard from "./components/dashboard/Dashboard.jsx"
+import Dashboard from "./components/Dashboard.jsx"
 
 import { WalletProvider } from "./stores/wallet.jsx";
 import { MailboxProvider } from "./stores/mailboxes.jsx";
@@ -16,8 +16,8 @@ function App() {
             <div style={{ marginLeft: "2em", marginRight: "2em", marginTop: "2em", marginBottom: "2em" }}>
                 <Header/>
                 <Routes>
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="*" element={<Dashboard />} />
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="*" element={<Dashboard to="/" replace />} />
                 </Routes>
             </div>
         </BrowserRouter>
