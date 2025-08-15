@@ -3,70 +3,90 @@ import { useState } from "react";
 import { useWallet } from "../stores/wallet";
 import {  useMailbox } from "../stores/mailboxes"
 
-function Send() {
-    return (
-      <div>
-        <div style={{ marginBottom: "1rem" }}>
-          <label>
-            To:
-            <input
-              type="text"
-              placeholder="Recipient address"
-              style={{ width: "100%", padding: "0.5rem", marginTop: "0.25rem" }}
-            />
-          </label>
-        </div>
-  
-        <div style={{ marginBottom: "1rem" }}>
-          <label>
-            Message:
-            <textarea
-              placeholder="Your message here"
-              style={{ width: "100%", padding: "0.5rem", marginTop: "0.25rem" }}
-            />
-          </label>
-        </div>
-  
-        <button style={{ padding: "0.5rem 1rem" }}>Send</button>
-      </div>
-    );
-  }
-  
 
-function MailboxTable({ mailboxes = [] }) {
+function Send() {
+  const { sendMessage } = useMailbox();
+  const [recipient, setRecipient] = useState("");
+  const [message, setMessage] = useState("");
+
+  const _sendMessage = async () => {
+    if (!recipient) {
+      return;
+    }
+    sendMessage(recipient, message);
+  };
+
+  return (
+    <div>
+      <div style={{ marginBottom: "1rem" }}>
+        <label>
+          To:
+          <input
+            type="text"
+            placeholder="Recipient address"
+            value={recipient}
+            onChange={(e) => setRecipient(e.target.value)}
+            style={{ width: "100%", padding: "0.5rem", marginTop: "0.25rem" }}
+          />
+        </label>
+      </div>
+
+      <div style={{ marginBottom: "1rem" }}>
+        <label>
+          Message:
+          <textarea
+            placeholder="Your message here"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            style={{ width: "100%", padding: "0.5rem", marginTop: "0.25rem" }}
+          />
+        </label>
+      </div>
+
+      <button onClick={() => _sendMessage()} style={{ padding: "0.5rem 1rem" }}>
+        Send
+      </button>
+    </div>
+  );
+}
+
+  function MailboxTable({ inbox = [] }) {
     return (
-      <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #ccc" }}>
-        <thead>
-          <tr>
-            <th style={{ border: "1px solid #ccc", padding: "0.5rem" }}>Mailbox</th>
-            <th style={{ border: "1px solid #ccc", padding: "0.5rem" }}>Message</th>
-          </tr>
-        </thead>
-        <tbody>
-          {mailboxes.length === 0 ? (
-            <tr>
-              <td colSpan={2} style={{ textAlign: "center", border: "1px solid #ccc", padding: "0.5rem" }}>
-                No mailboxes found
-              </td>
-            </tr>
-          ) : (
-            mailboxes.map((mb, index) => (
-              <tr key={index}>
-                <td style={{ border: "1px solid #ccc", padding: "0.5rem" }}>{mb.name}</td>
-                <td style={{ border: "1px solid #ccc", padding: "0.5rem" }}>{mb.owner}</td>
-                <td style={{ border: "1px solid #ccc", padding: "0.5rem" }}>
-                  <button>Open</button>
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+        <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #ccc" }}>
+            <thead>
+                <tr>
+                    <th style={{ border: "1px solid #ccc", padding: "0.5rem" }}>Mailbox Address</th>
+                    <th style={{ border: "1px solid #ccc", padding: "0.5rem" }}>Message</th>
+                    <th style={{ border: "1px solid #ccc", padding: "0.5rem" }}>From</th>
+                </tr>
+            </thead>
+            <tbody>
+                {inbox.length === 0 ? (
+                    <tr>
+                        <td colSpan={3} style={{ textAlign: "center", border: "1px solid #ccc", padding: "0.5rem" }}>
+                            No messages found
+                        </td>
+                    </tr>
+                ) : (
+                    inbox.flatMap((mb) =>
+                        (mb.mails || []).map((mail, i) => (
+                            <tr key={`${mb.target}-${i}`}>
+                                <td style={{ border: "1px solid #ccc", padding: "0.5rem" }}>{mb.target}</td>
+                                <td style={{ border: "1px solid #ccc", padding: "0.5rem" }}>{mail.message}</td>
+                                <td style={{ border: "1px solid #ccc", padding: "0.5rem" }}>{mail.from}</td>
+                            </tr>
+                        ))
+                    )
+                )}
+            </tbody>
+        </table>
     );
 }
 
+
+
 function Mailboxes() {
-  const { mailboxes, newMailbox } = useMailbox();
+  const { mailboxes, newMailbox, inbox } = useMailbox();
   const [showImport, setShowImport] = useState(false);
   const [importValue, setImportValue] = useState("");
   const [activeTab, setActiveTab] = useState("Inbox"); // "Inbox" or "Send"
@@ -118,7 +138,7 @@ function Mailboxes() {
         {activeTab === "Inbox" && (
             <div>
               <br/>
-                <MailboxTable mailboxes={mailboxes}/>
+                <MailboxTable inbox={inbox}/>
 
                 <button style={{ marginTop: "1em" }} onClick={() => newMailbox()}>New</button>
                 <button

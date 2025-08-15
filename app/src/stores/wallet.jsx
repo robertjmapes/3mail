@@ -1,5 +1,5 @@
 import { createContext, useContext, useState } from "react";
-import * as web3 from "../web3";
+import * as web3 from "../services/web3";
 
 
 const Web3Context = createContext();
