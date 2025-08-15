@@ -1,5 +1,7 @@
 # 3mail
-A **decentralised** and open-source mailing client.
+A **decentralised** and open-source mailing client. By decentralising the data we get an increased risk
+if our private key's are exposed - which is a problem no matter what - but at leveraging the upkeep that
+blockchian networks have we have a 24/7 mailing client at a cost of network processing.
 
-# Future Work
-  [] - To create a CLI for 3mail.
+Can be enhanced on different networks with encrpyted transactions.
+

@@ -3,6 +3,9 @@ pragma solidity ^0.8.0;
 
 contract Mailbox
 {
+    event MailReceived(Mail mail);
+    event KeyUpdated(bytes key);
+
     address public immutable owner;
     bytes public key;
     Mail[] private inbox;
@@ -21,7 +24,13 @@ contract Mailbox
         key = _key;
     }
 
-    function sendMessage(bytes calldata message, bytes calldata signature) external
+    function getMail(uint index) external view returns (Mail memory)
+    {
+        require(index < inbox.length, "No mail at index");
+        return inbox[index];
+    }
+
+    function sendMail(bytes calldata message, bytes calldata signature) external
     {
         inbox.push(Mail({
             sender: msg.sender,
@@ -31,10 +40,10 @@ contract Mailbox
         }));
     }
 
-    function getMail(uint index) external view returns (Mail memory)
+    function deleteMail(uint index) external onlyOwner
     {
         require(index < inbox.length, "No mail at index");
-        return inbox[index];
+        delete inbox[index];
     }
 
     function getInboxCount() external view returns (uint)
@@ -45,12 +54,6 @@ contract Mailbox
     function clearInbox() external onlyOwner
     {
         delete inbox;
-    }
-    
-    function clearMessage(uint index) external onlyOwner
-    {
-        require(index < inbox.length, "No mail at index");
-        delete inbox[index];
     }
 
     function updateKey(bytes memory _key) external onlyOwner

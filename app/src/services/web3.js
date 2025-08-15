@@ -9,6 +9,8 @@ export async function connectWallet()
     await provider.send("eth_requestAccounts", []);
     const signer = await provider.getSigner();
 
+    // Check if signer is connected before contiuting...
+
     return { provider, signer };
 }
 

@@ -17,7 +17,6 @@ function App() {
                 <Header/>
                 <Routes>
                     <Route path="/" element={<Dashboard />} />
-                    <Route path="*" element={<Dashboard to="/" replace />} />
                 </Routes>
             </div>
         </BrowserRouter>
