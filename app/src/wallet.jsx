@@ -28,6 +28,7 @@ export function WalletProvider({ children })
     {
         setProvider(null);
         setSigner(null);
+        window.location.reload();
     };
 
     return (

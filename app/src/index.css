@@ -1,6 +1,7 @@
 * {
     font-family: monospace;
     background-color: #fdf6e3;
+    overflow-wrap: break-word;
 }
 
 button {
@@ -12,4 +13,13 @@ button {
 input {
     padding: 0.5rem 1rem;
     border-radius: 5px;
+    width: 95%;
+}
+
+textarea {
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    border-color: black;
+    width: 95%;
+    height: 10em;
 }

@@ -1,8 +1,9 @@
 import { useMailbox } from "../mailboxes";
-import { useState } from "react";
+import { useState, useEffect} from "react";
 import LoadingButton from "./LoadingButton";
 
-import { downloadFile } from "../downloadJSON";
+import { downloadJSON, downloadPGPKey } from "../download";
+import { bytesToUtf8, utf8ToHex } from "../crypto";
 
 function ConnectedMailboxes({viewMailbox})
 {
@@ -14,26 +15,32 @@ function ConnectedMailboxes({viewMailbox})
             {mailboxes.length === 0 ? (
                 <p>No mailboxes connected</p>
             ) : (
-                <table style={{ borderCollapse: "collapse", width: "95%"}}>
+                <table style={{ borderCollapse: "collapse", width: "100%", tableLayout: "fixed", margin: "0 auto" }}>
                     <thead>
                         <tr>
-                            <th style={{ border: "1px solid #000", padding: "8px" }}>Address</th>
+                        <th style={{ border: "1px solid #000", padding: "8px" }}>Address</th>
                         </tr>
                     </thead>
                     <tbody>
                         {mailboxes.map((mb, idx) => (
-                            <tr
-                                key={idx}
-                                style={{ cursor: "pointer" }}
-                                onClick={() => viewMailbox(mb)}
+                        <tr key={idx} style={{ cursor: "pointer" }} onClick={() => viewMailbox(mb)}>
+                            <td
+                            style={{
+                                border: "1px solid #000",
+                                padding: "8px",
+                                width: "100%",       // fill available width
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                            }}
                             >
-                                <td style={{ border: "1px solid #000", padding: "8px" }}>
-                                    <u>{mb.address}</u>
-                                </td>
-                            </tr>
+                            <u>{mb.address}</u>
+                            </td>
+                        </tr>
                         ))}
                     </tbody>
                 </table>
+
             )}
         </div>
     );
@@ -54,7 +61,7 @@ function CreateNewMailbox()
         <div>
             <h3>Create A Mailbox</h3>
             <p>
-                Create a new mailbox with a new private key. It will automatically connect to your session, but remember to save the key for later use by exporting the mailbox!
+                Create a new mailbox with a new private key. It will automatically connect to your session and download the key, but remember to save the key for later use.
             </p>
             <label>
                 Passphrase:{" "}
@@ -112,10 +119,8 @@ function ConnectMailbox()
             <div>
                 <label>
                     Address:{" "}
-                    <input
-                        type="text"
+                    <input type="text"
                         placeholder="Enter mailbox address"
-                        style={{ width: "95%" }}
                         value={address}
                         onChange={(e) => setAddress(e.target.value)}
                     />
@@ -125,10 +130,8 @@ function ConnectMailbox()
             <div>
                 <label>
                     Key:{" "}
-                    <input
-                        type="password"
+                    <textarea
                         placeholder="Enter private key"
-                        style={{ width: "95%" }}
                         value={privateKey}
                         onChange={(e) => setPrivateKey(e.target.value)}
                     />
@@ -141,7 +144,6 @@ function ConnectMailbox()
                     <input
                         type="password"
                         placeholder="Enter passphrase"
-                        style={{ width: "95%" }}
                         value={passphrase}
                         onChange={(e) => setPassphrase(e.target.value)}
                     />
@@ -155,16 +157,34 @@ function ConnectMailbox()
 
 function ViewMailbox({viewMailbox, selectedMailbox})
 {
+    const { newMailboxKey } = useMailbox();
+    const [, forceUpdate] = useState(0); // dummy state to force re-render
+
     const [passphrase, setPassphrase] = useState("");
 
-    async function _changeKey()
+    const [newPassphrase, setNewPassphrase] = useState("");
+    const [newKey, setNewKey] = useState("");
+
+
+    async function changeKey()
     {
-        console.log('Changing key...');
+        await newMailboxKey(selectedMailbox, passphrase);
+        forceUpdate(n => n + 1); // triggers re-render
+        setPassphrase('');
     }
 
     async function exportMailbox()
     {
-        downloadFile(selectedMailbox, `${selectedMailbox.address}.json`);
+        downloadJSON(selectedMailbox, `${selectedMailbox.address}.json`);
+    }
+
+    async function editMailbox()
+    {
+        selectedMailbox.key.privateKey = utf8ToHex(newKey);
+        selectedMailbox.key.passphrase = newPassphrase;
+
+        setNewPassphrase('');
+        setNewKey('')
     }
 
     return (
@@ -174,10 +194,37 @@ function ViewMailbox({viewMailbox, selectedMailbox})
             <h2>Mailbox Details</h2>
             <button onClick={() => exportMailbox()}>Export Mailbox</button>
             <p><strong>Address:</strong> {selectedMailbox.address}</p>
-            <p><strong>Public Key:</strong> {selectedMailbox.key.publicKey}</p>
+            <p><strong>Public Key:</strong>
+                <br></br>{bytesToUtf8(selectedMailbox.key.publicKey)}
+            </p>
             <p><strong>Inbox Count:</strong> {selectedMailbox.inboxCount}</p>
             <hr></hr>
-            <h2>Change Key</h2>
+            <h2>Edit Private Key</h2>
+            <label>
+                New Key:{" "}
+                <textarea
+                    placeholder="Enter private key"
+                    style={{ width: "95%", height: "200px" }}
+                    value={newKey}
+                    onChange={(e) => setNewKey(e.target.value)}
+                />
+            </label>
+            <br></br>
+            <br></br>
+            <label>
+                Associated Passphrase:{" "}
+                    <input
+                        type="password"
+                        placeholder="Enter associated passphrase"
+                        style={{ width: "95%" }}
+                        value={newPassphrase}
+                        onChange={(e) => setNewPassphrase(e.target.value)}
+                    />
+            </label>
+            <br/><br/>
+            <LoadingButton onClick={() => editMailbox()}>Update</LoadingButton>
+            <hr></hr>
+            <h2>Generate New Key</h2>
             <label>
                 Passphrase:{" "}
                     <input
@@ -189,7 +236,7 @@ function ViewMailbox({viewMailbox, selectedMailbox})
                     />
             </label>
             <br/><br/>
-            <LoadingButton onClick={() => createNewMailbox()}>Change Key</LoadingButton>
+            <LoadingButton onClick={() => changeKey()}>New Key</LoadingButton>
         </div>
     );
 }

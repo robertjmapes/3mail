@@ -2,9 +2,12 @@ import { createContext, useContext, useState, useEffect } from "react";
 import { ethers, getBigInt } from "ethers";
 
 import {  useWallet } from './wallet.jsx'
+import { downloadJSON, downloadPGPKey } from './download.js';
 
 import {
+    utf8ToHex,
     utf8ToBytes,
+    hexToUtf8,
     generatePGPKey,
     encryptMessage,
     bytesToUtf8,
@@ -56,7 +59,7 @@ export function MailboxProvider({ children })
             const contract = new ethers.Contract(address, MailboxArtifact.abi, signer);
 
             let mailboxKey = await contract.key();
-            mailboxKey =  bytesToUtf8(mailboxKey);  
+            mailboxKey = bytesToUtf8(mailboxKey);  
 
             const encryptedMessage = utf8ToBytes(await encryptMessage(mailboxKey, message));            
             const senderAddress = await signer.getAddress();
@@ -97,8 +100,8 @@ export function MailboxProvider({ children })
                 address: address,
                 inboxCount: _inboxCount,
                 key: {
-                    private: privateKey,
-                    public: _publicKey
+                    privateKey: utf8ToHex(privateKey),
+                    publicKey: _publicKey
                 },
                 passphrase: passphrase
             }
@@ -111,6 +114,7 @@ export function MailboxProvider({ children })
 
     const getInbox = async () =>
     {
+        if (mailboxes.length == 0 ) return;
         console.log('getting inbox')
         let _inbox = [];
         for (let i=0; i < mailboxes.length; i++)
@@ -124,8 +128,12 @@ export function MailboxProvider({ children })
             for (let j=0; j < count; j++)
             {
                 let _mail = await recipientContract.getMail(j);
-                let decryptedMessage = await decryptMessage(mailboxes[i].key.privateKey, mailboxes[i].passphrase, bytesToUtf8(_mail.message));
-                
+                let decryptedMessage = await decryptMessage(
+                    hexToUtf8(mailboxes[i].key.privateKey),
+                    mailboxes[i].passphrase,
+                    bytesToUtf8(_mail.message))
+                ;
+                console.log(hexToUtf8(mailboxes[i].key.privateKey))
                 console.log(decryptedMessage);
                 let mail = {
                     sender: _mail.sender,
@@ -138,11 +146,17 @@ export function MailboxProvider({ children })
         setInbox(_inbox);
     };
 
-    async function changeKey(mailbox, newKey, passphrase)
+    async function newMailboxKey(mailbox, passphrase)
     {
+        // create new pgp key here..
+        const key = await generatePGPKey(null, null, passphrase);
         const contract = new ethers.Contract(mailbox.address, MailboxArtifact.abi, signer);
-        mailbox.changeKey(newKey);
+        await contract.updateKey(utf8ToHex(key.publicKey));
+        
+        await queryMailbox(mailbox);
 
+        mailbox.key.privateKey = utf8ToHex(key.privateKey);
+        downloadPGPKey(key, `${mailbox.address}_key.asc`);
     }
 
     async function newMailbox(passphrase)
@@ -156,24 +170,30 @@ export function MailboxProvider({ children })
         try
         {
             const key = await generatePGPKey(null, null, passphrase);
-            const publicKeyBytes = utf8ToBytes(key.publicKey);
-            const contract = await factory.deploy(publicKeyBytes);
-            await contract.waitForDeployment(); // wait for confirmation
-            
+
+            const publicKeyBytes = utf8ToHex(key.publicKey);
+            const privateKeyBytes = utf8ToHex(key.privateKey);
+
+            const contract = await factory.deploy(utf8ToHex(key.publicKey));
+            await contract.waitForDeployment();
+
             let mailbox = {
                 address: contract.target,
                 inboxCount: 0,
                 key: {
-                    privateKey: key.privateKey,
-                    publicKey: key.publicKey
+                    privateKey: privateKeyBytes,
+                    publicKey: publicKeyBytes
                 },
                 passphrase: passphrase
-            }
+            };
+            0
             await queryMailbox(mailbox);
             addMailbox(mailboxes, mailbox);
+            downloadPGPKey(key, `${mailbox.address}_key.asc`);
         }
         catch (err)
         {
+            console.log(err);
             return err;
         }
     };
@@ -187,7 +207,8 @@ export function MailboxProvider({ children })
             sendMessage,
             getInbox,
             connectMailbox,
-            queryMailbox
+            queryMailbox,
+            newMailboxKey
          }}>
             {children}
         </MailboxContext.Provider>

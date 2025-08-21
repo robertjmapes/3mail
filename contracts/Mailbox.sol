@@ -33,13 +33,15 @@ contract Mailbox
         key = _key;
     }
 
+    receive() external payable {}
+
     function getMail(uint index) external view returns (Mail memory)
     {
         require(index < inbox.length, "No mail at index");
         return inbox[index];
     }
 
-    function sendMail(bytes calldata message, bytes calldata signature) external
+    function sendMail(bytes calldata message, bytes calldata signature) external payable
     {
         Mail memory mail = Mail({
             sender: msg.sender,
@@ -78,4 +80,11 @@ contract Mailbox
         require(msg.sender == owner, "Only owner is allowed to call this function!");
         _;
     }
+
+    function withdraw() external onlyOwner
+    {
+        uint balance = address(this).balance;
+        require(balance > 0, "No Ether to withdraw");
+        payable(owner).transfer(balance);
+    }   
 }

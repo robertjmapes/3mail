@@ -1,5 +1,22 @@
 import * as openpgp from 'openpgp';
 
+// Convert UTF-8 string to hex string
+export function utf8ToHex(str)
+{
+    const bytes = new TextEncoder().encode(str); // UTF-8 encode
+    return '0x' + Array.from(bytes)
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+}
+
+// Convert hex string (with or without 0x) back to UTF-8 string
+export function hexToUtf8(hex)
+{
+    if (hex.startsWith('0x')) hex = hex.slice(2);
+    const bytes = new Uint8Array(hex.match(/.{1,2}/g).map(b => parseInt(b, 16)));
+    return new TextDecoder().decode(bytes);
+}
+
 function utf8ToBytes(str) 
 {
     return new TextEncoder().encode(str);
@@ -24,6 +41,16 @@ function bytesToUtf8(bytes) {
     const decoder = new TextDecoder();
     return decoder.decode(bytes);
 }
+
+export function hexToBytes(hex)
+{
+    if (hex.startsWith("0x")) hex = hex.slice(2);
+    const bytes = new Uint8Array(hex.length / 2);
+    for (let i = 0; i < bytes.length; i++) {
+      bytes[i] = parseInt(hex.slice(i*2, i*2+2), 16);
+    }
+    return bytes;
+  }
 
 
 async function generatePGPKey(name, email, passphrase)
@@ -61,7 +88,8 @@ async function encryptMessage(publicKeyArmored, message)
 
 async function decryptMessage(privateKeyArmored, passphrase, encryptedMessage)
 {
-    try {
+    try
+    {
         // Read the armored private key
         let privateKeyObj = await openpgp.readPrivateKey({ armoredKey: privateKeyArmored });
 
