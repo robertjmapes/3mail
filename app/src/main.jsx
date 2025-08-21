@@ -5,8 +5,8 @@ import Header from "./components/Header.jsx";
 import Footer from "./components/Footer.jsx";
 import Dashboard from "./components/Dashboard.jsx"
 
-import { WalletProvider } from "./stores/wallet.jsx";
-import { MailboxProvider } from "./stores/mailboxes.jsx";
+import { WalletProvider } from "./wallet.jsx";
+import { MailboxProvider } from "./mailboxes.jsx";
 
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 

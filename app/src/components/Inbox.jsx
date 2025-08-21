@@ -1,15 +1,15 @@
 import { useState, useEffect } from "react";
 
-import { useMailbox } from "../stores/mailboxes";
+import { useMailbox } from "../mailboxes";
 
 // Component to display full mail
 function Mail({ mail, onBack }) {
   return (
     <div style={{ padding: "1em" }}>
       <button onClick={onBack} style={{ marginBottom: "1em" }}>← Back to Inbox</button>
-      <h3>From: {mail.from}</h3>
+      <h3>From: {mail.sender}</h3>
       <p>Message: {mail.message}</p>
-      <p>Time: {mail.time}</p>
+      <p>Time: {mail.timestamp}</p>
     </div>
   );
 }
@@ -37,7 +37,9 @@ function InboxTable({ onSelectMail, inbox = [] }) {
         </thead>
         <tbody>
           {currentData.map((row, idx) => (
-            <tr key={idx} style={{ backgroundColor: idx % 2 === 0 ? "#fdf6e3" : "#fff" }}>
+            <tr key={idx} style={{ backgroundColor: idx % 2 === 0 ? "#fdf6e3" : "#fff" }}
+              onClick={() => onSelectMail(row)}
+            >
               <td
                 style={{
                     border: "1px solid #000",
@@ -49,7 +51,6 @@ function InboxTable({ onSelectMail, inbox = [] }) {
                     overflow: "hidden",          // hide overflow
                     textOverflow: "ellipsis",    // add "..." when overflow
                 }}
-                onClick={() => onSelectMail(row)}
                 >
                 {row.sender}
               </td>
@@ -64,7 +65,6 @@ function InboxTable({ onSelectMail, inbox = [] }) {
                     overflow: "hidden",          // hide overflow
                     textOverflow: "ellipsis",    // add "..." when overflow
                 }}
-                onClick={() => onSelectMail(row)}
                 >
                 {row.message}
               </td>
@@ -78,7 +78,6 @@ function InboxTable({ onSelectMail, inbox = [] }) {
                     whiteSpace: "nowrap", // prevent wrapping
                     textAlign: "center",  // optional, center the time
                 }}
-                onClick={() => onSelectMail(row)}
                 >
                 {row.timestamp}
                 </td>

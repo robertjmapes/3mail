@@ -8,34 +8,30 @@ import {
     generatePGPKey,
     encryptMessage,
     bytesToUtf8,
-} from '../services/crypto.js'
+    decryptMessage,
+} from './crypto.js'
 
-import MailboxArtifact from '../Mailbox.json';
+import MailboxArtifact from './Mailbox.json';
 
 export function MailboxProvider({ children })
 {
-    const { signer, provider } = useWallet();  
+    const { signer } = useWallet();
     const [inbox, setInbox] = useState([]);
     const [mailboxes, setMailboxes] = useState([]);  
-    const [contacts, setContacts] = useState([]);
 
-    const queryMailbox = async (address) =>
+    const queryMailbox = async (mailbox) =>
     {
         const contract = new ethers.Contract(
-            address,
+            mailbox.address,
             MailboxArtifact.abi,
             signer
         );
-        
+
         try
         {
-            const count = await contract.getInboxCount();
-            const publicKey = await contract.key(); 
-    
-            return {
-                inboxCount: Number(count),
-                publicKey: publicKey
-            };
+            mailbox.inboxCount = await contract.getInboxCount();
+            mailbox.key.publicKey = await contract.key();
+            mailbox.owner = await contract.owner();
         }
         catch (err)
         {
@@ -44,28 +40,22 @@ export function MailboxProvider({ children })
         }
     };
 
-    // Helper function to add mailbox only if it's unique
-    const addMailboxUnique = (mailboxesArray, newMailbox) => {
-        // Check uniqueness, for example by address
+    const addMailbox = (mailboxesArray, newMailbox) =>
+    {
         const exists = mailboxesArray.some(mailbox => mailbox.address === newMailbox.address);
-        if (!exists) {
+        if (!exists) 
             setMailboxes([...mailboxesArray, newMailbox]);
-        }
     };
 
-    const sendMessage = async (recipientContractAddress, message) =>
+    const sendMessage = async (address, message) =>
     {
         if (!signer) return;
     
         try
         {
-            const recipientContract = new ethers.Contract(
-                recipientContractAddress,
-                MailboxArtifact.abi,
-                signer
-            );
+            const contract = new ethers.Contract(address, MailboxArtifact.abi, signer);
 
-            let mailboxKey = await recipientContract.key();
+            let mailboxKey = await contract.key();
             mailboxKey =  bytesToUtf8(mailboxKey);  
 
             const encryptedMessage = utf8ToBytes(await encryptMessage(mailboxKey, message));            
@@ -74,45 +64,54 @@ export function MailboxProvider({ children })
             const payload = senderAddress + message;
             const signature = await signer.signMessage(payload);
 
-            const tx = await recipientContract.sendMessage(encryptedMessage, signature);
+            const tx = await contract.sendMessage(encryptedMessage, signature);
             await tx.wait();
-        } catch (err) {
         }
+        catch (err)
+        {
+            throw Error(err);
+        }
+        return;
     };
     
-    const connectMailbox = async (address, privateKey) =>
-    {
-        if (!address || !privateKey) {
-            throw new Error("Address and private key are required");
-        }
+    async function connectMailbox(address, privateKey, passphrase)
+    {        
+        const contract = new ethers.Contract(
+            address,
+            MailboxArtifact.abi,
+            signer
+        );
 
-        // Here you could validate the key, decrypt a test message, etc.
-        let res;
-        try
+        try 
         {
-            res = await queryMailbox(address);
-            console.log(res)
-        }
-        catch (err) {
-            console.log("Contract address is incorrect!");
-            return;
-        }
+            const _owner = await contract.owner();
+            
+            if (_owner != await signer.getAddress())
+                throw Error("Signer is not owner of mailbox! Refusing connection!");
 
-        let mailbox = {
-            address: address,
-            inboxCount: res.inboxCount,
-            key: {
-                private: privateKey,
-                public: res.publicKey
-            }               
-        }
+            const _inboxCount = await contract.getInboxCount();
+            const _publicKey = await contract.key();
 
-        addMailboxUnique(mailboxes, mailbox);
+            let mailbox = {
+                owner: _owner,
+                address: address,
+                inboxCount: _inboxCount,
+                key: {
+                    private: privateKey,
+                    public: _publicKey
+                },
+                passphrase: passphrase
+            }
+            addMailbox(mailboxes, mailbox);
+        }
+        catch (err)
+        { }
     };
 
 
     const getInbox = async () =>
     {
+        console.log('getting inbox')
         let _inbox = [];
         for (let i=0; i < mailboxes.length; i++)
         {
@@ -125,25 +124,29 @@ export function MailboxProvider({ children })
             for (let j=0; j < count; j++)
             {
                 let _mail = await recipientContract.getMail(j);
+                let decryptedMessage = await decryptMessage(mailboxes[i].key.privateKey, mailboxes[i].passphrase, bytesToUtf8(_mail.message));
+                
+                console.log(decryptedMessage);
                 let mail = {
                     sender: _mail.sender,
-                    message: _mail.message,
+                    message: decryptedMessage,
                     timestamp: _mail.timestamp
                 }
                 _inbox.push(mail);
             }
         }
-        console.log(_inbox);
         setInbox(_inbox);
     };
 
-    
-
-    const newMailbox = async () =>
+    async function changeKey(mailbox, newKey, passphrase)
     {
-        if (!signer)
-            return;
+        const contract = new ethers.Contract(mailbox.address, MailboxArtifact.abi, signer);
+        mailbox.changeKey(newKey);
 
+    }
+
+    async function newMailbox(passphrase)
+    {
         const factory = new ethers.ContractFactory(
             MailboxArtifact.abi,
             MailboxArtifact.bytecode,
@@ -152,41 +155,29 @@ export function MailboxProvider({ children })
 
         try
         {
-            const key = await generatePGPKey();
+            const key = await generatePGPKey(null, null, passphrase);
             const publicKeyBytes = utf8ToBytes(key.publicKey);
             const contract = await factory.deploy(publicKeyBytes);
             await contract.waitForDeployment(); // wait for confirmation
             
-            let res = await queryMailbox(contract.target);
             let mailbox = {
                 address: contract.target,
-                inboxCount: res.inboxCount,
+                inboxCount: 0,
                 key: {
-                    private: key.privateKey,
-                    public: res.publicKey
-                }               
+                    privateKey: key.privateKey,
+                    publicKey: key.publicKey
+                },
+                passphrase: passphrase
             }
-    
-            addMailboxUnique(mailboxes, mailbox);
+            await queryMailbox(mailbox);
+            addMailbox(mailboxes, mailbox);
         }
         catch (err)
         {
-            console.error(err);
-            return;
+            return err;
         }
-
-
     };
-
-    useEffect(() =>
-    {
-        if (mailboxes.length)
-        {
-            console.log(mailboxes);
-        }
-
-    }, [mailboxes]);
-    
+   
 
     return (
         <MailboxContext.Provider value={{

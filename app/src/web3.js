@@ -1,5 +1,7 @@
 import { ethers } from "ethers";
 
+// TODO: If signer changes -> reload
+
 export async function connectWallet()
 {
     if (!window.ethereum)

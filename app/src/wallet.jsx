@@ -1,6 +1,7 @@
 import { createContext, useContext, useState } from "react";
-import * as web3 from "../services/web3";
+import * as web3 from "./web3.js";
 
+// On disconnect remember to clear store.
 
 const Web3Context = createContext();
 

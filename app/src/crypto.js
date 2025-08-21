@@ -26,7 +26,7 @@ function bytesToUtf8(bytes) {
 }
 
 
-async function generateECCKey(name, email, passphrase)
+async function generatePGPKey(name, email, passphrase)
 {
     return await openpgp.generateKey({
         type: 'ecc',
@@ -36,13 +36,17 @@ async function generateECCKey(name, email, passphrase)
     });
 }
 
-async function generatePGPKey(name, email, passphrase) {
-    return await openpgp.generateKey({
-        type: 'rsa',
-        rsaBits: 4096,
-        userIDs: [{ name, email }],
-        passphrase
-    });
+async function hexToPGPArmored(hexKey)
+{
+    if (hexKey.startsWith('0x')) {
+        hexKey = hexKey.slice(2);
+    }
+    const binaryKey = Uint8Array.from(Buffer.from(hexKey, 'hex'));
+
+    const packetlist = openpgp.packet.List.fromBytes(binaryKey);
+    const publicKey = new openpgp.PublicKey(packetlist);
+
+    return publicKey.armor();
 }
 
 async function encryptMessage(publicKeyArmored, message)
@@ -57,27 +61,41 @@ async function encryptMessage(publicKeyArmored, message)
 
 async function decryptMessage(privateKeyArmored, passphrase, encryptedMessage)
 {
-    const privateKey = await openpgp.decryptKey({
-        privateKey: await openpgp.readPrivateKey({ armoredKey: privateKeyArmored }),
-        passphrase
-    });
+    try {
+        // Read the armored private key
+        let privateKeyObj = await openpgp.readPrivateKey({ armoredKey: privateKeyArmored });
 
-    const message = await openpgp.readMessage({
-        armoredMessage: encryptedMessage
-    });
+        // Decrypt it if a passphrase is provided
+        if (passphrase) {
+            privateKeyObj = await openpgp.decryptKey({
+                privateKey: privateKeyObj,
+                passphrase
+            });
+        }
 
-    const { data: decrypted } = await openpgp.decrypt({
-        message,
-        decryptionKeys: privateKey
-    });
-    return decrypted;
+        // Read the encrypted message
+        const message = await openpgp.readMessage({ armoredMessage: encryptedMessage });
+
+        // Decrypt the message using the Key object
+        const { data: decrypted } = await openpgp.decrypt({
+            message,
+            decryptionKeys: privateKeyObj
+        });
+
+        return decrypted;
+    }
+    catch (err)
+    {
+        return 'Could not decrypt message!';
+    }
 }
+
 
 export {
     bytesToUtf8,
     utf8ToBytes,
-    generateECCKey,
     generatePGPKey,
+    hexToPGPArmored,
     encryptMessage,
     decryptMessage
 };

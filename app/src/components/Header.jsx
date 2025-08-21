@@ -1,4 +1,4 @@
-import { useWallet } from "../stores/wallet.jsx"
+import { useWallet } from "../wallet.jsx"
 
 export default function Header() {
     const { provider, signer, connect, disconnect } = useWallet();

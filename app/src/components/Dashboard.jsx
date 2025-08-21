@@ -1,11 +1,12 @@
-import { useWallet } from "../stores/wallet";
+import { useWallet } from "../wallet";
 import { useState } from "react";
 
 import Send from "./Send";
 import Settings from "./Settings";
 import Inbox from "./Inbox";
 
-export default function Dashboard() {
+export default function Dashboard()
+{
     const { signer } = useWallet();
     const isConnected = !!signer;
 

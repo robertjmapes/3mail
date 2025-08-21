@@ -1,7 +1,77 @@
 # 3mail
-A **decentralised** and open-source mailing client. By decentralising the data we get an increased risk
-if our private key's are exposed - which is a problem no matter what - but at leveraging the upkeep that
-blockchian networks have we have a 24/7 mailing client at a cost of network processing.
 
-Can be enhanced on different networks with encrpyted transactions.
+**A decentralized and open-source mailing client.**
 
+3mail is a fully **decentralized email client** that leverages blockchain networks to provide a **24/7 mailing service** without relying on centralized servers. By decentralizing the data, users retain full control over their mail, but it also means that **exposing your private keys can compromise security**, so always handle keys with care.
+
+---
+
+## Features
+
+* **Decentralized**: No central server; mail is stored and transmitted through blockchain networks.
+* **Open-source**: Fully transparent and customizable.
+* **Encrypted**: All messages are encrypted with your private keys.
+* **Cross-network compatible**: Can be enhanced on different networks using encrypted transactions.
+* **Always-on**: Leveraging blockchain network uptime for continuous availability.
+
+---
+
+## Why 3mail?
+
+Traditional email systems rely on centralized servers, which can be **targets for hacks or outages**. 3mail decentralizes communication, providing **resilience, transparency, and control** to its users.
+
+> ⚠️ **Security Warning:** As with any decentralized system, losing your private key or exposing it can compromise your mailbox. Always store your keys securely.
+
+---
+
+## Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/3mail.git
+
+# Install dependencies
+cd 3mail
+npm install
+
+# Run the client
+npm start
+```
+
+---
+
+## Usage
+
+1. **Create a mailbox** with a new private key.
+2. **Connect an existing mailbox** using your address and private key.
+3. **Send and receive encrypted messages** seamlessly on supported networks.
+4. **Export/import configuration** for backup or migration.
+
+---
+
+## Contributing
+
+3mail is **open-source** and welcomes contributions! You can:
+
+* Report bugs
+* Suggest new features
+* Submit pull requests
+
+Please make sure to follow the **code of conduct** and maintain **security best practices** when handling private keys.
+
+---
+
+## License
+
+[MIT License](LICENSE)
+
+---
+
+If you want, I can also **make a shorter, “landing page style” version** that looks professional and readable in GitHub’s markdown preview, highlighting the benefits and security considerations right away.
+
+Do you want me to do that?
+
+## Todo
+  - To implemenet CLI tools.
+  - To implemenet desktop app for windows/mac/unix and phone apps for macOS/Android
+  - The web version is really for quick in/out otherwise dong anything else would compromise security, implement local storage

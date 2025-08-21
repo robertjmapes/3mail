@@ -11,7 +11,7 @@ export default function Footer() {
 
   return (
       <footer style={styles.footer}>
-        3mail © {new Date().getFullYear()}  | <a href='https://github.com/robertjmapes/3mail'>Donate</a>
+        3mail © {new Date().getFullYear()}  | <a href='https://github.com/robertjmapes/3mail'>About</a>
       </footer>
   );
 }
